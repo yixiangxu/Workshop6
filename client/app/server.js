@@ -56,34 +56,46 @@ export function postStatusUpdate(user, location, contents, cb) {
  * Adds a new comment to the database on the given feed item.
  */
 export function postComment(feedItemId, author, contents, cb) {
-  var feedItem = readDocument('feedItems', feedItemId);
-  feedItem.comments.push({
-    "author": author,
-    "contents": contents,
-    "postDate": new Date().getTime(),
-    "likeCounter": []
+  sendXHR('POST', '/feeditem', {
+    feedId: feedItemId,
+    author: author,
+    contents: contents
+  }, (xhr) => {
+    // Return the new status update.
+    cb(JSON.parse(xhr.responseText));
   });
-  writeDocument('feedItems', feedItem);
-  // Return a resolved version of the feed item.
-  emulateServerReturn(getFeedItemSync(feedItemId), cb);
 }
 
 /**
  * Adds a 'like' to a comment.
  */
-export function likeComment(feedItemId, commentIdx, userId, cb) {
+/*export function likeComment(feedItemId, commentIdx, userId, cb) {
   var feedItem = readDocument('feedItems', feedItemId);
   var comment = feedItem.comments[commentIdx];
   comment.likeCounter.push(userId);
   writeDocument('feedItems', feedItem);
   comment.author = readDocument('users', comment.author);
   emulateServerReturn(comment, cb);
+}*/
+
+export function likeComment(feedItemId, commentIdx, userId, cb) {
+  sendXHR('PUT', '/feeditem/' + feedItemId + '/comment/' + commentIdx + '/likelist/' + userId,
+          undefined, (xhr) => {
+    cb(JSON.parse(xhr.responseText));
+  });
+}
+
+export function unlikeComment(feedItemId, commentIdx, userId, cb) {
+  sendXHR('DELETE', '/feeditem/' + feedItemId + '/comment/' + commentIdx + '/likelist/' + userId,
+          undefined, (xhr) => {
+    cb(JSON.parse(xhr.responseText));
+  });
 }
 
 /**
  * Removes a 'like' from a comment.
  */
-export function unlikeComment(feedItemId, commentIdx, userId, cb) {
+/*export function unlikeComment(feedItemId, commentIdx, userId, cb) {
   var feedItem = readDocument('feedItems', feedItemId);
   var comment = feedItem.comments[commentIdx];
   var userIndex = comment.likeCounter.indexOf(userId);
@@ -93,7 +105,7 @@ export function unlikeComment(feedItemId, commentIdx, userId, cb) {
   }
   comment.author = readDocument('users', comment.author);
   emulateServerReturn(comment, cb);
-}
+}*/
 
 var token = 'eyJpZCI6NH0='; // <-- Put your base64'd JSON token here
 /**
